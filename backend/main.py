@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 app = FastAPI()
 
@@ -11,14 +12,8 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-@app.get("/")
-def home():
-    return {
-        "message": "AI Assessment Monitoring Backend is Running"
-    }
-
 @app.get("/health")
 def health():
-    return {
-        "status": "OK"
-    }
+    return {"status": "OK"}
+
+app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
