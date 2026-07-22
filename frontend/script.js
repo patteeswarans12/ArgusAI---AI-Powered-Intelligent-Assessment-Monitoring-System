@@ -264,6 +264,64 @@ function initExamPage() {
     let riskLevel = "LOW";
     let riskEvents = [];
 
+    const RISK_POINTS = {
+    FACE_ABSENT: 10,
+    MULTIPLE_FACES: 25,
+    TAB_SWITCH: 15,
+    WINDOW_BLUR: 10,
+    LOOKING_AWAY: 5,
+    SUSPICIOUS_SCREEN: 20,
+    MIC_ANOMALY: 10
+    };
+
+    function getRiskLevel(score) {
+
+    if (score >= 75) {
+        return "CRITICAL";
+    }
+
+    if (score >= 50) {
+        return "HIGH";
+    }
+
+    if (score >= 20) {
+        return "MEDIUM";
+    }
+
+    return "LOW";
+    }
+
+    function addRiskEvent(type, message) {
+
+    const points = RISK_POINTS[type] || 0;
+
+    riskScore += points;
+
+    if (riskScore > 100) {
+        riskScore = 100;
+    }
+
+    const event = {
+        type: type,
+        message: message,
+        points: points,
+        timestamp: new Date().toISOString()
+    };
+
+    riskEvents.push(event);
+
+    console.log("⚠️ Risk Event:", event);
+    console.log("Risk Score:", riskScore);
+    console.log("Risk Level:", getRiskLevel(riskScore));
+
+    sendRiskUpdate();
+    }
+
+    addRiskEvent(
+    "FACE_ABSENT",
+    "Face not detected for more than 3 seconds"
+    );
+    
     let faceAbsentStartTime = null;
     let multipleFaceStartTime = null;
 
@@ -391,16 +449,21 @@ function initExamPage() {
 
                 const absentDuration = (currentTime - faceAbsentStartTime) / 1000;
 
-                if (absentDuration >= 3) {
-                    if (!faceAbsentReported) {
-                        addRiskPoints(10, "Face not detected for more than 3 seconds");
-                        faceAbsentReported = true;
-                    }
-                    updateMonitoringStatus(
-                        "FACE_ABSENT",
-                        "⚠️ Face not detected. Please remain visible to the camera."
-                    );
-                }
+               if (absentDuration >= 3) {
+
+    updateMonitoringStatus(
+        "FACE_ABSENT",
+        "⚠️ Face not detected. Please remain visible to the camera."
+    );
+
+    if (!riskEvents.some(event => event.type === "FACE_ABSENT")) {
+        addRiskEvent(
+            "FACE_ABSENT",
+            "Face not detected for more than 3 seconds"
+        );
+    }
+    }   
+
             } else if (faceCount === 1) {
                 // ── Exactly one face — normal ──
                 faceAbsentStartTime = null;
